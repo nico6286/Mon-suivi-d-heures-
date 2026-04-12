@@ -3,137 +3,110 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Suivi Pro - Heures & Chantiers</title>
-    <link rel="manifest" href="./manifest.json">
-    <link rel="apple-touch-icon" href="https://cdn-icons-png.flaticon.com/512/2693/2693514.png">
-    <meta name="theme-color" content="#2c3e50">
-
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    <title>Suivi Pro</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
-    
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
     <style>
-        :root { --primary: #2c3e50; --success: #27ae60; --danger: #e74c3c; --warning: #f1c40f; }
-        body { background-color: #f4f7f6; font-family: -apple-system, sans-serif; padding-bottom: 50px; }
-        .card { border-radius: 15px; border: none; box-shadow: 0 4px 12px rgba(0,0,0,0.05); }
-        .stat-val { font-size: 1.3rem; font-weight: bold; color: var(--primary); display: block; }
-        .label-sm { font-size: 0.65rem; text-transform: uppercase; color: #7f8c8d; font-weight: bold; margin-bottom: 4px; display: block; }
-        
-        /* Navigation Mois */
-        .month-nav { background: white; border-radius: 15px; padding: 12px; display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; border: 1px solid #eee; }
-        .month-label { font-weight: 800; text-transform: uppercase; color: var(--primary); font-size: 0.9rem; min-width: 120px; text-align: center; }
-        
-        /* Salaire & Design */
-        .salary-box { background: linear-gradient(135deg, #2c3e50, #4ca1af); color: white; border-radius: 20px; transition: 0.2s; cursor: pointer; }
-        .salary-box:active { transform: scale(0.98); }
-        .week-separator { background: #dfe6e9; padding: 10px 15px; margin: 20px -15px 10px -15px; font-size: 0.75rem; font-weight: 800; color: #2d3436; display: flex; justify-content: space-between; align-items: center; }
-        .delta-tag { font-size: 0.65rem; padding: 2px 7px; border-radius: 10px; font-weight: bold; }
+        :root { --primary: #007bff; --bg: #f8f9fa; }
+        body { background: var(--bg); font-family: sans-serif; padding-bottom: 50px; }
+        .stat-card { background: white; border-radius: 15px; padding: 15px; text-align: center; box-shadow: 0 2px 8px rgba(0,0,0,0.05); height: 100%; }
+        .stat-card small { color: #6c757d; font-weight: bold; font-size: 0.7rem; text-transform: uppercase; }
+        .stat-card div { font-size: 1.4rem; font-weight: bold; margin: 5px 0; }
+        .delta-tag { font-size: 0.7rem !important; padding: 2px 8px; border-radius: 10px; display: inline-block; font-weight: bold; }
+        .delta-neg { background: #f8d7da; color: #a94442; }
         .delta-pos { background: #d4edda; color: #155724; }
-        .delta-neg { background: #f8d7da; color: #721c24; }
-        
-        /* Alertes */
-        .bg-holiday { background-color: #fff9db !important; border-left: 5px solid #f1c40f !important; }
+        .salary-banner { background: linear-gradient(135deg, #2c3e50, #4ca1af); color: white; border-radius: 15px; padding: 20px; text-align: center; margin: 15px 0; }
+        .week-separator { background: #e9ecef; padding: 8px 15px; font-weight: bold; font-size: 0.85rem; color: #495057; margin: 15px -15px 10px -15px; display: flex; justify-content: space-between; }
         .edit-mode { background-color: #fff3cd !important; border: 2px solid #ffc107 !important; }
-        #month-alert { display: none; background: #e67e22; color: white; padding: 10px; border-radius: 12px; margin-bottom: 15px; text-align: center; font-weight: bold; font-size: 0.8rem; }
-        @keyframes blink { 0% { opacity: 1; } 50% { opacity: 0.6; } 100% { opacity: 1; } }
-        .friday-alert { animation: blink 1.2s infinite; background-color: var(--danger) !important; color: white !important; }
+        .friday-alert { background-color: #fd7e14 !important; border-color: #fd7e14 !important; }
     </style>
 </head>
-<body class="container py-3">
-
-    <div id="month-alert"><i class="bi bi-calendar-check-fill me-2"></i> Fin de mois : Exportez votre PDF !</div>
-
-    <header class="d-flex justify-content-between align-items-center mb-3">
-        <h5 class="fw-bold m-0 text-primary"><i class="bi bi-clock-history me-2"></i>Suivi Pro</h5>
-        <div class="d-flex gap-2">
-            <button onclick="exportJSON()" class="btn btn-sm btn-outline-primary shadow-sm" title="Sauvegarder"><i class="bi bi-cloud-arrow-down-fill"></i></button>
-            <button onclick="importJSON()" class="btn btn-sm btn-outline-secondary shadow-sm" title="Restaurer"><i class="bi bi-cloud-arrow-up-fill"></i></button>
-            <button onclick="exportToPDF()" class="btn btn-sm btn-dark shadow-sm" title="Exporter PDF"><i class="bi bi-file-earmark-pdf"></i></button>
-        </div>
-        <input type="file" id="importFile" style="display:none" onchange="handleImport(this)">
-    </header>
-
-    <div class="month-nav shadow-sm">
-        <button onclick="changeMonth(-1)" class="btn btn-light btn-sm"><i class="bi bi-chevron-left"></i></button>
-        <div class="month-label" id="current-view-label">Chargement...</div>
-        <button onclick="changeMonth(1)" class="btn btn-light btn-sm"><i class="bi bi-chevron-right"></i></button>
-    </div>
-
-    <div class="row g-2 mb-3 text-center">
-        <div class="col-6">
-            <div class="card p-3 shadow-sm h-100">
-                <span class="label-sm">Total Mois</span>
-                <span id="month-hours" class="stat-val">0h00</span>
-                <div id="month-delta-ui" class="mt-1"></div>
+<body>
+    <div class="container py-3">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <h5 class="m-0 text-primary fw-bold"><i class="bi bi-clock-history"></i> Suivi Pro</h5>
+            <div>
+                <button onclick="exportJSON()" class="btn btn-sm btn-outline-primary"><i class="bi bi-cloud-download"></i></button>
+                <button onclick="importJSON()" class="btn btn-sm btn-outline-secondary"><i class="bi bi-cloud-upload"></i></button>
+                <button onclick="exportToPDF()" class="btn btn-sm btn-dark"><i class="bi bi-file-earmark-pdf"></i></button>
+                <input type="file" id="importFile" style="display:none" onchange="handleImport(this)">
             </div>
         </div>
-        <div class="col-6">
-            <div class="card p-3 shadow-sm h-100 border-primary" style="border-width: 2px !important;">
-                <span class="label-sm">Semaine <span id="current-week-num">--</span></span>
-                <span id="current-week-hours" class="stat-val">0h00</span>
-                <div id="current-week-delta-ui" class="mt-1"></div>
+
+        <div class="card p-2 mb-3 shadow-sm border-0">
+            <div class="d-flex justify-content-between align-items-center">
+                <button onclick="changeMonth(-1)" class="btn btn-link btn-sm text-dark"><i class="bi bi-chevron-left"></i></button>
+                <span id="current-view-label" class="fw-bold text-uppercase">CHARGEMENT...</span>
+                <button onclick="changeMonth(1)" class="btn btn-link btn-sm text-dark"><i class="bi bi-chevron-right"></i></button>
             </div>
         </div>
-    </div>
 
-    <div class="card salary-box p-3 text-center mb-4 shadow" onclick="showSalaryDetail()">
-        <span class="label-sm text-white-50">Salaire Net Estimé (Cliquez)</span>
-        <h2 id="net-salary" class="fw-bold mb-0">0,00 €</h2>
-    </div>
-
-    <div class="card p-3 shadow-sm mb-4" id="form-card">
-        <div class="row g-2">
-            <div class="col-7"><label class="label-sm">Date</label><input type="date" id="date" class="form-control" onchange="checkDayType()"></div>
-            <div class="col-5"><label class="label-sm">Type</label>
-                <select id="day-type" class="form-select" onchange="checkDayType()">
-                    <option value="work">💻 Travail</option>
-                    <option value="cp">🌴 Congé</option>
-                    <option value="maladie">🤒 Maladie</option>
-                    <option value="recup">⏳ Récup.</option>
-                </select>
+        <div class="row g-2 mb-3">
+            <div class="col-6">
+                <div class="stat-card">
+                    <small>Total Mois</small>
+                    <div id="month-hours">0h00</div>
+                    <div id="month-delta-ui"></div>
+                </div>
             </div>
-            <div class="col-12 mt-2" id="chantier-div"><label class="label-sm">Nom du Chantier</label><input type="text" id="chantier" class="form-control" placeholder="Lieu ou client"></div>
-            <div id="work-inputs" class="row g-2 m-0 p-0 w-100 mt-2">
-    <div class="col-4">
-        <label class="label-sm">Début</label>
-        <input type="text" id="start" class="form-control" placeholder="Ex: 800" inputmode="numeric">
-    </div>
-    <div class="col-4">
-        <label class="label-sm">Fin</label>
-        <input type="text" id="end" class="form-control" placeholder="Ex: 1730" inputmode="numeric">
-    </div>
-    <div class="col-4">
-        <label class="label-sm">Pause (min)</label>
-        <input type="number" id="break" class="form-control" value="45">
-    </div>
-</div>
-
-            <div class="col-12 mt-3">
-                <input type="hidden" id="edit-id">
-                <button onclick="saveSession()" id="btn-save" class="btn btn-primary w-100 fw-bold py-3">Enregistrer</button>
+            <div class="col-6">
+                <div class="stat-card">
+                    <small id="week-label">Semaine --</small>
+                    <div id="current-week-hours">0h00</div>
+                    <div id="current-week-delta-ui"></div>
+                </div>
             </div>
         </div>
-    </div>
 
-    <div id="printable-area"><div id="history"></div></div>
-
-    <button onclick="if(confirm('Tout effacer ?')) {localStorage.clear(); location.reload();}" class="btn btn-link btn-sm w-100 text-danger mt-4 text-decoration-none opacity-50">Réinitialiser l'application</button>
-
-    <div class="modal fade" id="salaryModal" tabindex="-1" aria-hidden="true">
-      <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content" style="border-radius: 20px;">
-          <div class="modal-header border-0 pb-0"><h6 class="fw-bold">Décompte estimatif</h6><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
-          <div class="modal-body">
-            <div class="d-flex justify-content-between mb-2"><span>Heures (<span id="calc-hours">0h00</span>) :</span><span id="calc-brut-base">0,00 €</span></div>
-            <div class="d-flex justify-content-between mb-2 text-danger"><span>Charges (~23%) :</span><span id="calc-charges">- 0,00 €</span></div>
-            <div class="d-flex justify-content-between mb-3"><span>Paniers (<span id="calc-meals-count">0</span>) :</span><span class="text-success" id="calc-meals-val">+ 0,00 €</span></div>
-            <hr><div class="d-flex justify-content-between align-items-center"><span class="h6 fw-bold">TOTAL NET :</span><span class="h4 fw-bold text-primary" id="calc-net-total">0,00 €</span></div>
-          </div>
+        <div class="salary-banner shadow-sm">
+            <small class="text-uppercase opacity-75">Salaire Net Estimé (Cliquez)</small>
+            <div id="net-salary" class="display-6 fw-bold">0,00 €</div>
         </div>
-      </div>
+
+        <div id="form-card" class="card p-3 shadow-sm border-0 mb-4">
+            <input type="hidden" id="edit-id">
+            <div class="row g-2">
+                <div class="col-7">
+                    <label class="small fw-bold text-muted text-uppercase">Date</label>
+                    <input type="date" id="date" class="form-control" onchange="checkDayType()">
+                </div>
+                <div class="col-5">
+                    <label class="small fw-bold text-muted text-uppercase">Type</label>
+                    <select id="day-type" class="form-select" onchange="checkDayType()">
+                        <option value="work">💻 Travail</option>
+                        <option value="conge">🌴 Congé</option>
+                        <option value="maladie">🤒 Maladie</option>
+                        <option value="rtt">🕒 RTT</option>
+                    </select>
+                </div>
+                <div class="col-12" id="chantier-div">
+                    <label class="small fw-bold text-muted text-uppercase">Nom du chantier</label>
+                    <input type="text" id="chantier" class="form-control" placeholder="Lieu ou client">
+                </div>
+                <div id="work-inputs" class="row g-2 m-0 p-0">
+                    <div class="col-4">
+                        <label class="small fw-bold text-muted text-uppercase">Début</label>
+                        <input type="text" id="start" class="form-control" placeholder="Ex: 800">
+                    </div>
+                    <div class="col-4">
+                        <label class="small fw-bold text-muted text-uppercase">Fin</label>
+                        <input type="text" id="end" class="form-control" placeholder="Ex: 1730">
+                    </div>
+                    <div class="col-4">
+                        <label class="small fw-bold text-muted text-uppercase">Pause (min)</label>
+                        <input type="number" id="break" class="form-control" value="45">
+                    </div>
+                </div>
+                <div class="col-12 mt-3">
+                    <button onclick="saveSession()" id="btn-save" class="btn btn-primary w-100 fw-bold py-2">Enregistrer</button>
+                </div>
+            </div>
+        </div>
+
+        <div id="history"></div>
     </div>
 
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
     <script src="app.js"></script>
 </body>
 </html>
