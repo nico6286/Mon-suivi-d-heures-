@@ -61,13 +61,12 @@ function saveSession() {
         let sR = document.getElementById('start').value;
         let eR = document.getElementById('end').value;
         p = parseInt(document.getElementById('break').value) || 0;
-        if (!sR.includes(':') || !eR.includes(':')) return alert("Format heure incorrect (ex: 800)");
+        if (!sR.includes(':') || !eR.includes(':')) return alert("Format heure incorrect");
         dur = (new Date(date + 'T' + eR) - new Date(date + 'T' + sR)) / 60000 - p;
         start = sR; end = eR;
     }
 
     const session = { id: editId ? parseInt(editId) : Date.now(), date, start, end, duration: dur, type: isH ? 'ferie' : type, chantier, pause: p };
-    
     if (editId) data[data.findIndex(s => s.id === parseInt(editId))] = session;
     else data.push(session);
 
@@ -87,8 +86,7 @@ function render() {
     let tM = 0, sM = 0, weekTotalNow = 0;
     const now = new Date();
     const curWeek = getWeekNumber(now);
-    let currentWeekHeader = null;
-
+    
     const filtered = data.filter(s => {
         const d = new Date(s.date);
         return d.getMonth() === viewDate.getMonth() && d.getFullYear() === viewDate.getFullYear();
@@ -96,20 +94,30 @@ function render() {
 
     filtered.sort((a, b) => new Date(b.date) - new Date(a.date));
 
+    let weekGroups = {};
+    filtered.forEach(s => {
+        const wNum = getWeekNumber(new Date(s.date));
+        if (!weekGroups[wNum]) weekGroups[wNum] = 0;
+        weekGroups[wNum] += s.duration;
+        tM += s.duration;
+        if(s.type === 'work' || s.type === 'ferie') sM++;
+        if(wNum === curWeek) weekTotalNow += s.duration;
+    });
+
+    let currentHeader = null;
     filtered.forEach(s => {
         const d = new Date(s.date);
         const wNum = getWeekNumber(d);
-        tM += s.duration;
-        if(s.type === 'work' || s.type === 'ferie') sM++;
-        
-        // Calcul du total pour la semaine affichée en haut (Semaine 15 dans ton cas)
-        if(wNum === curWeek && d.getFullYear() === now.getFullYear()) {
-            weekTotalNow += s.duration;
-        }
 
-        if (currentWeekHeader !== wNum) {
-            currentWeekHeader = wNum;
-            hist.innerHTML += `<div class="week-separator"><span>SEMAINE ${wNum}</span></div>`;
+        if (currentHeader !== wNum) {
+            currentHeader = wNum;
+            const wTotal = weekGroups[wNum];
+            const wDelta = wTotal - 2100;
+            hist.innerHTML += `
+                <div class="week-separator">
+                    <span>SEMAINE ${wNum}</span>
+                    <span>${fH(wTotal)} <small class="${wDelta>=0?'text-success':'text-danger'}">(${wDelta>=0?'+':''}${fH(wDelta)})</small></span>
+                </div>`;
         }
 
         const deltaDay = s.duration - 420;
@@ -120,26 +128,27 @@ function render() {
             <div class="card p-3 mb-2 border-start border-4 ${s.type==='ferie'?'bg-holiday':'border-primary'} shadow-sm">
                 <div class="d-flex justify-content-between align-items-center">
                     <div onclick="editS(${s.id})" style="flex-grow:1;">
-                        <small class="text-uppercase text-muted">${d.toLocaleDateString('fr-FR',{weekday:'short'})} ${d.getDate()}</small>
-                        <div class="fw-bold">${s.type === 'work' ? '🏗️ ' + s.chantier : '✨ ' + s.type.toUpperCase()}</div>
+                        <small class="text-uppercase text-muted">${d.toLocaleDateString('fr-FR',{weekday:'short'})}. ${d.getDate()}</small>
+                        <div class="fw-bold">${s.type==='work'?'🏗️ '+s.chantier:'✨ '+s.type.toUpperCase()}</div>
                         <small class="text-muted">${s.start} - ${s.end} ${dShow}</small>
                     </div>
                     <div class="text-end">
-                        <span class="badge ${s.duration >= 420 ? 'bg-success' : 'bg-secondary'} rounded-pill">${fH(s.duration)}</span>
+                        <span class="badge ${s.duration>=420?'bg-success':'bg-secondary'} rounded-pill">${fH(s.duration)}</span>
                         <button onclick="deleteS(${s.id})" class="btn-link text-danger border-0 bg-transparent d-block ms-auto mt-2 p-1"><i class="bi bi-trash3"></i></button>
                     </div>
                 </div>
             </div>`;
     });
 
-    // AFFICHAGE DES COMPTEURS HAUTS (ID Vérifiés)
+    // Compteurs du haut
     document.getElementById('month-hours').innerText = fH(tM);
-    
-    const weekNumLabel = document.getElementById('current-week-num');
-    if(weekNumLabel) weekNumLabel.innerText = curWeek;
-    
-    const weekHoursLabel = document.getElementById('current-week-hours');
-    if(weekHoursLabel) weekHoursLabel.innerText = fH(weekTotalNow);
+    const mDelta = tM - (151.67 * 60);
+    document.getElementById('month-delta-ui').innerHTML = `<span class="delta-tag ${mDelta>=0?'delta-pos':'delta-neg'}">${mDelta>=0?'+':''}${fH(mDelta)}</span>`;
+
+    document.getElementById('week-label').innerText = `SEMAINE ${curWeek}`;
+    document.getElementById('current-week-hours').innerText = fH(weekTotalNow);
+    const wDelta = weekTotalNow - 2100;
+    document.getElementById('current-week-delta-ui').innerHTML = `<span class="delta-tag ${wDelta>=0?'delta-pos':'delta-neg'}">${wDelta>=0?'+':''}${fH(wDelta)}</span>`;
 
     const net = ((tM / 60) * settings.hourlyBrut * settings.ratioNet) + (sM * settings.mealVal);
     document.getElementById('net-salary').innerText = net.toFixed(2).replace('.', ',') + " €";
@@ -188,7 +197,6 @@ function exportJSON() {
     a.download = "backup.json";
     a.click();
 }
-function importJSON() { document.getElementById('importFile').click(); }
 function handleImport(input) {
     const reader = new FileReader();
     reader.onload = e => {
@@ -199,3 +207,4 @@ function handleImport(input) {
     reader.readAsText(input.files[0]);
 }
 function exportToPDF() { html2pdf().from(document.getElementById('history')).save("Heures.pdf"); }
+function importJSON() { document.getElementById('importFile').click(); }
