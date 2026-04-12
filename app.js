@@ -84,7 +84,11 @@ function render() {
     label.innerText = viewDate.toLocaleDateString('fr-FR', { month: 'long', year: 'numeric' }).toUpperCase();
     hist.innerHTML = '';
 
-    let tM = 0, sM = 0, currentWeek = null;
+    let tM = 0, sM = 0, weekTotalNow = 0;
+    const now = new Date();
+    const curWeek = getWeekNumber(now);
+    let currentWeekHeader = null;
+
     const filtered = data.filter(s => {
         const d = new Date(s.date);
         return d.getMonth() === viewDate.getMonth() && d.getFullYear() === viewDate.getFullYear();
@@ -97,10 +101,14 @@ function render() {
         const wNum = getWeekNumber(d);
         tM += s.duration;
         if(s.type === 'work' || s.type === 'ferie') sM++;
+        
+        // Calcul du total pour la semaine affichée en haut (Semaine 15 dans ton cas)
+        if(wNum === curWeek && d.getFullYear() === now.getFullYear()) {
+            weekTotalNow += s.duration;
+        }
 
-        // Séparateur de semaine
-        if (currentWeek !== wNum) {
-            currentWeek = wNum;
+        if (currentWeekHeader !== wNum) {
+            currentWeekHeader = wNum;
             hist.innerHTML += `<div class="week-separator"><span>SEMAINE ${wNum}</span></div>`;
         }
 
@@ -124,15 +132,30 @@ function render() {
             </div>`;
     });
 
+    // AFFICHAGE DES COMPTEURS HAUTS (ID Vérifiés)
     document.getElementById('month-hours').innerText = fH(tM);
+    
+    const weekNumLabel = document.getElementById('current-week-num');
+    if(weekNumLabel) weekNumLabel.innerText = curWeek;
+    
+    const weekHoursLabel = document.getElementById('current-week-hours');
+    if(weekHoursLabel) weekHoursLabel.innerText = fH(weekTotalNow);
+
     const net = ((tM / 60) * settings.hourlyBrut * settings.ratioNet) + (sM * settings.mealVal);
     document.getElementById('net-salary').innerText = net.toFixed(2).replace('.', ',') + " €";
 }
 
 function getWeekNumber(d) {
-    d = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()));
-    d.setUTCDate(d.getUTCDate() + 4 - (d.getUTCDay() || 7));
-    return Math.ceil((((d - new Date(Date.UTC(d.getUTCFullYear(), 0, 1))) / 86400000) + 1) / 7);
+    let date = new Date(d.getTime());
+    date.setHours(0, 0, 0, 0);
+    date.setDate(date.getDate() + 3 - (date.getDay() + 6) % 7);
+    let week1 = new Date(date.getFullYear(), 0, 4);
+    return 1 + Math.round(((date.getTime() - week1.getTime()) / 86400000 - 3 + (week1.getDay() + 6) % 7) / 7);
+}
+
+function fH(min) { 
+    const m = Math.abs(min); 
+    return (min < 0 ? '-' : '') + Math.floor(m/60) + "h" + Math.round(m%60).toString().padStart(2,'0'); 
 }
 
 function editS(id) {
@@ -145,15 +168,9 @@ function editS(id) {
     document.getElementById('break').value = s.pause || 45;
     document.getElementById('edit-id').value = s.id;
     document.getElementById('btn-save').innerText = "Mettre à jour";
-    // Remet la zone en jaune
     document.getElementById('form-card').classList.add('edit-mode');
     checkDayType();
     window.scrollTo({ top: 0, behavior: 'smooth' });
-}
-
-function fH(min) { 
-    const m = Math.abs(min); 
-    return (min < 0 ? '-' : '') + Math.floor(m/60) + "h" + Math.round(m%60).toString().padStart(2,'0'); 
 }
 
 function resetForm() {
