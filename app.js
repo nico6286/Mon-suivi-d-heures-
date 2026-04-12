@@ -57,6 +57,22 @@ function saveSession() {
     resetForm();
     render();
 }
+// Fonction de conversion magique (800 -> 08:00)
+function formatQuickTime(input) {
+    input.addEventListener('blur', function() {
+        let val = this.value.replace(':', '');
+        if (val.length === 3) val = '0' + val; // 800 -> 0800
+        if (val.length === 4) {
+            const h = val.substring(0, 2);
+            const m = val.substring(2, 4);
+            if(h < 24 && m < 60) this.value = `${h}:${m}`;
+        }
+    });
+}
+
+// Active la conversion sur les deux champs
+formatQuickTime(document.getElementById('start'));
+formatQuickTime(document.getElementById('end'));
 
 function render() {
     const hist = document.getElementById('history'); 
