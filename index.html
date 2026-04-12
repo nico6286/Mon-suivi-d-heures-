@@ -1,71 +1,88 @@
-
 <!DOCTYPE html>
 <html lang="fr">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Mon suivi d'heures</title>
-
+    
     <link rel="manifest" href="manifest.json">
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <link rel="apple-touch-icon" href="1000016253.jpg">
+    <meta name="theme-color" content="#4682a9">
+    <meta name="mobile-web-app-capable" content="yes">
+    <link rel="icon" sizes="192x192" href="1000016253.jpg">
 
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
     <style>
         :root { --primary: #007bff; --bg: #f2f4f7; }
-        body { background: var(--bg); font-family: -apple-system, sans-serif; padding-bottom: 30px; }
-
+        body { background: var(--bg); font-family: sans-serif; padding-bottom: 30px; }
         .app-title { font-weight: 800; font-size: 0.9rem; color: #333; }
-
-        .stat-card { background: white; border-radius: 12px; padding: 12px; text-align: center; border: 1px solid #dee2e6; height: 100%; box-shadow: 0 2px 4px rgba(0,0,0,0.02); }
+        .stat-card { background: white; border-radius: 12px; padding: 12px; text-align: center; border: 1px solid #dee2e6; height: 100%; }
         .stat-card small { color: #6c757d; font-size: 0.65rem; text-transform: uppercase; display: block; font-weight: 800; }
         .stat-card div { font-size: 1.3rem; font-weight: 800; }
-
         .delta-tag { font-size: 0.7rem; padding: 3px 10px; border-radius: 20px; font-weight: 800; display: inline-block; margin-top: 5px; }
         .bg-neg { background: #fee2e2; color: #991b1b; }
         .bg-pos { background: #dcfce7; color: #166534; }
-
         .salary-banner { background: linear-gradient(135deg, #4682a9, #78b1d1); color: white; border-radius: 12px; padding: 15px; text-align: center; margin: 15px 0; cursor: pointer; }
         .salary-banner div { font-size: 1.6rem; font-weight: 800; }
-
-        .week-header { background: #e2e8f0; color: #475569; padding: 8px 15px; font-weight: 800; font-size: 0.75rem; display: flex; justify-content: space-between; border-radius: 8px 8px 0 0; }
-        .day-row { display: flex; align-items: center; padding: 10px 15px; border-bottom: 1px solid #e2e8f0; }
-        .day-name { font-weight: 800; color: #475569; width: 100px; }
-        .day-stats { flex: 1; display: flex; justify-content: space-between; align-items: center; }
-        .day-stats div { font-size: 0.8rem; }
-        .day-actions { display: flex; gap: 5px; }
-        .btn-sm { padding: 3px 8px; font-size: 0.7rem; }
-        .btn-outline-secondary { color: #6c757d; border-color: #dee2e6; }
-        .btn-outline-danger { color: #dc3545; border-color: #dc3545; }
-
-        .form-card { background: white; border-radius: 12px; padding: 15px; margin: 15px 0; box-shadow: 0 2px 4px rgba(0,0,0,0.02); }
-        .form-card.edit-mode { border: 2px solid var(--primary); }
-        .form-card h5 { color: var(--primary); font-weight: 800; margin-bottom: 15px; }
-        .form-row { margin-bottom: 10px; }
-        .form-row label { font-size: 0.8rem; font-weight: 800; color: #495057; display: block; margin-bottom: 3px; }
-        .form-row input, .form-row select { width: 100%; padding: 8px; border: 1px solid #dee2e6; border-radius: 6px; font-size: 0.9rem; }
-        .btn-primary { background: var(--primary); border-color: var(--primary); font-weight: 800; }
-        .btn-primary:hover { background: #0069d9; border-color: #0062cc; }
-
-        .history-card { background: white; border-radius: 12px; padding: 15px; margin: 15px 0; box-shadow: 0 2px 4px rgba(0,0,0,0.02); }
-        .history-row { display: flex; padding: 8px 0; border-bottom: 1px solid #f1f3f5; }
-        .history-col { flex: 1; font-size: 0.8rem; }
-        .history-actions { display: flex; gap: 5px; }
-        .history-actions button { padding: 2px 6px; font-size: 0.7rem; }
-
-        #install-button { display: none; position: fixed; bottom: 20px; right: 20px; background: var(--primary); color: white; border: none; border-radius: 50%; width: 50px; height: 50px; font-size: 24px; cursor: pointer; box-shadow: 0 2px 10px rgba(0,0,0,0.2); }
+        .week-header { background: #e2e8f0; color: #475569; padding: 8px 15px; font-weight: 800; font-size: 0.75rem; display: flex; justify-content: space-between; border-top: 1px solid #cbd5e1; margin-top: 15px; }
+        .work-card { background: white; border-bottom: 1px solid #f1f5f9; padding: 12px 15px; display: flex; justify-content: space-between; align-items: center; }
+        .badge-hours { background: #007bff; color: white; border-radius: 8px; padding: 4px 12px; font-weight: 800; font-size: 0.9rem; }
+        .info-detail { font-size: 0.75rem; color: #6c757d; margin-top: 2px; }
+        .edit-mode { background-color: #fefce8 !important; border: 2px solid #facc15 !important; }
     </style>
 </head>
 <body>
-    <div class="container">
-        <!-- Contenu existant -->
+    <div class="container-fluid px-3 pt-3">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <div class="app-title"><i class="bi bi-clock-history text-primary me-2"></i>Mon suivi d'heures</div>
+            <div class="btn-group shadow-sm">
+                <button onclick="exportJSON()" class="btn btn-sm btn-white border bg-white"><i class="bi bi-download"></i></button>
+                <button onclick="importJSON()" class="btn btn-sm btn-white border bg-white"><i class="bi bi-upload"></i></button>
+                <button onclick="exportToPDF()" class="btn btn-sm btn-dark"><i class="bi bi-filetype-pdf"></i></button>
+            </div>
+            <input type="file" id="importFile" style="display:none" onchange="handleImport(this)">
+        </div>
+
+        <div class="card mb-3 border-0 shadow-sm">
+            <div class="d-flex justify-content-between align-items-center p-2">
+                <button onclick="changeMonth(-1)" class="btn btn-sm"><i class="bi bi-chevron-left"></i></button>
+                <span id="current-view-label" class="fw-bold small text-uppercase">-</span>
+                <button onclick="changeMonth(1)" class="btn btn-sm"><i class="bi bi-chevron-right"></i></button>
+            </div>
+        </div>
+
+        <div class="row g-2 mb-3">
+            <div class="col-6"><div class="stat-card"><small>Cumul Mois</small><div id="month-hours">0h00</div><div id="month-delta"></div></div></div>
+            <div class="col-6"><div class="stat-card"><small id="week-label">Semaine</small><div id="current-week-hours">0h00</div><div id="week-delta"></div></div></div>
+        </div>
+
+        <div class="salary-banner" onclick="showSalaryDetail()">
+            <small class="text-uppercase fw-bold" style="font-size:0.6rem; opacity: 0.9;">Estimation Salaire Net</small>
+            <div id="net-salary">0,00 €</div>
+        </div>
+
+        <div class="card p-3 border-0 shadow-sm mb-4" id="form-card">
+            <input type="hidden" id="edit-id">
+            <div class="row g-2">
+                <div class="col-7"><input type="date" id="date" class="form-control form-control-sm bg-light" onchange="checkDayType()"></div>
+                <div class="col-5"><select id="day-type" class="form-select form-select-sm bg-light" onchange="checkDayType()"><option value="work">Travail</option><option value="conge">Congé</option><option value="maladie">Maladie</option></select></div>
+                <div class="col-12" id="chantier-div"><input type="text" id="chantier" class="form-control form-control-sm bg-light" placeholder="📍 Nom du chantier"></div>
+                <div id="work-inputs" class="row g-2 m-0 p-0">
+                    <div class="col-4"><input type="text" id="start" class="form-control form-control-sm bg-light" placeholder="Début"></div>
+                    <div class="col-4"><input type="text" id="end" class="form-control form-control-sm bg-light" placeholder="Fin"></div>
+                    <div class="col-4"><input type="number" id="break" class="form-control form-control-sm bg-light" value="45"></div>
+                </div>
+                <button onclick="saveSession()" id="btn-save" class="btn btn-primary w-100 mt-2 fw-bold">ENREGISTRER</button>
+            </div>
+        </div>
+        <div id="history" class="shadow-sm rounded-3 overflow-hidden border"></div>
     </div>
-
-    <button id="install-button">+</button>
-
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
     <script src="app.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/html2pdf.js@0.10.1/dist/html2pdf.bundle.min.js"></script>
+    <script>
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('sw.js');
+        }
+    </script>
 </body>
 </html>
