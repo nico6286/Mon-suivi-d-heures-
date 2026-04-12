@@ -13,6 +13,7 @@ function changeMonth(diff) { viewDate.setMonth(viewDate.getMonth() + diff); rend
 
 function setupQuickTime(id) {
     const el = document.getElementById(id);
+    if(!el) return;
     el.addEventListener('blur', function() {
         let val = this.value.replace(':', '').trim();
         if (val.length === 3) val = '0' + val; 
@@ -32,39 +33,48 @@ function saveSession() {
     const type = document.getElementById('day-type').value;
     const isH = joursFeries2026.includes(date);
     let dur = 0, start = "--:--", end = "--:--", p = 0;
-
-    if (isH || type !== 'work') { dur = 420; start = isH ? "FÉRIÉ" : type.toUpperCase(); }
-    else {
+    
+    if (isH || type !== 'work') { 
+        dur = 420; // 7h
+        start = isH ? "FÉRIÉ" : type.toUpperCase(); 
+    } else {
         let sR = document.getElementById('start').value, eR = document.getElementById('end').value;
         p = parseInt(document.getElementById('break').value) || 0;
-        if (!sR.includes(':') || !eR.includes(':')) return alert("Heures invalides");
+        if (!sR.includes(':') || !eR.includes(':')) return alert("Heures invalides. Format attendu: HH:MM ou HHMM");
         dur = (new Date(date + 'T' + eR) - new Date(date + 'T' + sR)) / 60000 - p;
         start = sR; end = eR;
     }
-
-    const session = { id: document.getElementById('edit-id').value || Date.now(), date, start, end, duration: dur, type: isH ? 'ferie' : type, chantier: document.getElementById('chantier').value, pause: p };
-    const idx = data.findIndex(s => s.id == session.id);
+    
+    const session = { 
+        id: document.getElementById('edit-id').value ? parseInt(document.getElementById('edit-id').value) : Date.now(), 
+        date, start, end, duration: dur, type: isH ? 'ferie' : type, chantier: document.getElementById('chantier').value, pause: p 
+    };
+    
+    const idx = data.findIndex(s => s.id === session.id);
     if (idx > -1) data[idx] = session; else data.push(session);
-
+    
     localStorage.setItem('work_tracker_data', JSON.stringify(data));
-    resetForm(); render();
+    resetForm(); 
+    render();
 }
 
 function render() {
     const hist = document.getElementById('history');
     const label = document.getElementById('current-view-label');
+    if(!hist || !label) return;
+    
     label.innerText = viewDate.toLocaleDateString('fr-FR', { month: 'long', year: 'numeric' }).toUpperCase();
     hist.innerHTML = '';
-
+    
     let tM = 0, sM = 0, weekTotalNow = 0, weekGroups = {};
     const curW = getWeekNumber(new Date());
-
+    
     const filtered = data.filter(s => {
         const d = new Date(s.date);
         return d.getMonth() === viewDate.getMonth() && d.getFullYear() === viewDate.getFullYear();
     });
     filtered.sort((a, b) => new Date(b.date) - new Date(a.date));
-
+    
     filtered.forEach(s => {
         const w = getWeekNumber(new Date(s.date));
         weekGroups[w] = (weekGroups[w] || 0) + s.duration;
@@ -72,7 +82,7 @@ function render() {
         if(s.type === 'work' || s.type === 'ferie') sM++;
         if(w === curW) weekTotalNow += s.duration;
     });
-
+    
     let lastW = null;
     filtered.forEach(s => {
         const d = new Date(s.date), w = getWeekNumber(d);
@@ -94,7 +104,7 @@ function render() {
                 </div>
             </div>`;
     });
-
+    
     document.getElementById('month-hours').innerText = fH(tM);
     const mD = tM - (151.67 * 60);
     document.getElementById('month-delta-ui').innerHTML = `<span class="delta-tag ${mD>=0?'delta-pos':'delta-neg'}">${mD>=0?'+':''}${fH(mD)}</span>`;
@@ -102,42 +112,81 @@ function render() {
     document.getElementById('current-week-hours').innerText = fH(weekTotalNow);
     const wD = weekTotalNow - 2100;
     document.getElementById('current-week-delta-ui').innerHTML = `<span class="delta-tag ${wD>=0?'delta-pos':'delta-neg'}">${wD>=0?'+':''}${fH(wD)}</span>`;
+    
     const net = ((tM / 60) * settings.hourlyBrut * settings.ratioNet) + (sM * settings.mealVal);
     document.getElementById('net-salary').innerText = net.toFixed(2).replace('.', ',') + " €";
 }
 
-function showSalaryDetail() {
-    const tM = Array.from(data).reduce((acc, s) => acc + s.duration, 0); // Simplifié pour l'exemple
-    alert(`Détails Estimation :\n- Heures : ${fH(tM)}\n- Taux : ${settings.hourlyBrut}€/h\n- Net (~77%) + Panier Repas`);
+function showSalaryDetail() { 
+    alert(`Détails Estimation :\n- Taux brut : ${settings.hourlyBrut}€/h\n- Conversion Net (~77%)\n- Panier Repas (${settings.mealVal}€ / jour travaillé)`); 
 }
 
-function getWeekNumber(d) {
-    let date = new Date(d.getTime()); date.setHours(0,0,0,0);
-    date.setDate(date.getDate() + 3 - (date.getDay() + 6) % 7);
-    return 1 + Math.round(((date.getTime() - new Date(date.getFullYear(),0,4).getTime()) / 86400000 - 3 + (new Date(date.getFullYear(),0,4).getDay() + 6) % 7) / 7);
+function getWeekNumber(d) { 
+    let date = new Date(d.getTime()); date.setHours(0,0,0,0); 
+    date.setDate(date.getDate() + 3 - (date.getDay() + 6) % 7); 
+    return 1 + Math.round(((date.getTime() - new Date(date.getFullYear(),0,4).getTime()) / 86400000 - 3 + (new Date(date.getFullYear(),0,4).getDay() + 6) % 7) / 7); 
 }
 
 function fH(min) { const m = Math.abs(min); return (min < 0 ? '-' : '') + Math.floor(m/60) + "h" + Math.round(m%60).toString().padStart(2,'0'); }
 
 function editS(id) {
-    const s = data.find(x => x.id == id);
-    document.getElementById('date').value = s.date;
+    const s = data.find(x => x.id === id);
+    if(!s) return;
+    document.getElementById('date').value = s.date; 
     document.getElementById('day-type').value = s.type === 'ferie' ? 'work' : s.type;
-    document.getElementById('chantier').value = s.chantier;
-    document.getElementById('start').value = s.start; document.getElementById('end').value = s.end;
-    document.getElementById('edit-id').value = s.id;
+    document.getElementById('chantier').value = s.chantier || ''; 
+    document.getElementById('start').value = s.start !== "--:--" && s.start !== "FÉRIÉ" && s.start !== "MALADIE" && s.start !== "CONGE" ? s.start : ''; 
+    document.getElementById('end').value = s.end !== "--:--" ? s.end : '';
+    document.getElementById('edit-id').value = s.id; 
     document.getElementById('btn-save').innerText = "Mettre à jour";
-    document.getElementById('form-card').classList.add('edit-mode');
-    checkDayType(); window.scrollTo(0,0);
+    document.getElementById('form-card').classList.add('edit-mode'); 
+    checkDayType(); 
+    window.scrollTo(0,0);
 }
 
-function resetForm() { document.getElementById('edit-id').value = ""; document.getElementById('btn-save').innerText = "Enregistrer"; document.getElementById('form-card').classList.remove('edit-mode'); }
-function deleteS(id) { if(confirm("Supprimer ?")) { data = data.filter(x => x.id != id); localStorage.setItem('work_tracker_data', JSON.stringify(data)); render(); } }
-function exportJSON() { const blob = new Blob([JSON.stringify(data)], {type:"application/json"}); const a = document.createElement("a"); a.href = URL.createObjectURL(blob); a.download = "backup.json"; a.click(); }
+function resetForm() { 
+    document.getElementById('edit-id').value = ""; 
+    document.getElementById('chantier').value = ""; 
+    document.getElementById('start').value = ""; 
+    document.getElementById('end').value = ""; 
+    document.getElementById('btn-save').innerText = "Enregistrer"; 
+    document.getElementById('form-card').classList.remove('edit-mode'); 
+}
+
+function deleteS(id) { 
+    if(confirm("Supprimer cette entrée ?")) { 
+        data = data.filter(x => x.id !== id); 
+        localStorage.setItem('work_tracker_data', JSON.stringify(data)); 
+        render(); 
+    } 
+}
+
+function exportJSON() { 
+    const b = new Blob([JSON.stringify(data)], {type:"application/json"}); 
+    const a = document.createElement("a"); 
+    a.href = URL.createObjectURL(b); 
+    a.download = "SuiviPro_Backup.json"; 
+    a.click(); 
+}
+
 function importJSON() { document.getElementById('importFile').click(); }
-function handleImport(input) { const reader = new FileReader(); reader.onload = e => { data = JSON.parse(e.target.result); localStorage.setItem('work_tracker_data', JSON.stringify(data)); render(); }; reader.readAsText(input.files[0]); }
+
+function handleImport(input) { 
+    const r = new FileReader(); 
+    r.onload = e => { 
+        try {
+            data = JSON.parse(e.target.result); 
+            localStorage.setItem('work_tracker_data', JSON.stringify(data)); 
+            render(); 
+            alert("Données importées avec succès !");
+        } catch(err) {
+            alert("Erreur lors de l'importation du fichier.");
+        }
+    }; 
+    if(input.files[0]) r.readAsText(input.files[0]); 
+}
+
 function exportToPDF() { 
-    const mois = document.getElementById('current-view-label').innerText.replace(' ', '_');
-    html2pdf().from(document.getElementById('history')).save(`Heures_${mois}.pdf`); 
-if ('serviceWorker' in navigator) { navigator.serviceWorker.register('./app.js'); }
+    const m = document.getElementById('current-view-label').innerText.replace(' ', '_'); 
+    html2pdf().from(document.getElementById('history')).save(`Heures_${m}.pdf`); 
 }
