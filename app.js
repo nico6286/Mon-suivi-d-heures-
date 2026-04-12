@@ -131,7 +131,35 @@ function resetForm() { document.getElementById('edit-id').value = ""; document.g
 function fH(min) { const m = Math.abs(min); return (min < 0 ? '-' : '') + Math.floor(m/60) + "h" + Math.round(m%60).toString().padStart(2,'0'); }
 function getWeekNumber(d) { let date = new Date(d.getTime()); date.setHours(0,0,0,0); date.setDate(date.getDate() + 3 - (date.getDay() + 6) % 7); return 1 + Math.round(((date.getTime() - new Date(date.getFullYear(),0,4).getTime()) / 86400000 - 3 + (new Date(date.getFullYear(),0,4).getDay() + 6) % 7) / 7); }
 function changeMonth(diff) { viewDate.setMonth(viewDate.getMonth() + diff); render(); }
-function exportJSON() { const b = new Blob([JSON.stringify(data)], {type:"application/json"}); const a = document.createElement("a"); a.href = URL.createObjectURL(b); a.download = "sauvegarde.json"; a.click(); }
+function exportJSON() { 
+    const dateStr = new Date().toLocaleDateString('fr-FR').replace(/\//g, '-');
+    const b = new Blob([JSON.stringify(data)], {type:"application/json"}); 
+    const a = document.createElement("a"); 
+    a.href = URL.createObjectURL(b); 
+    a.download = `sauvegarde-heures-${dateStr}.json`; 
+    a.click(); 
+}
 function importJSON() { document.getElementById('importFile').click(); }
-function handleImport(input) { const r = new FileReader(); r.onload = e => { data = JSON.parse(e.target.result); localStorage.setItem('work_tracker_data', JSON.stringify(data)); render(); }; r.readAsText(input.files[0]); }
-function exportToPDF() { html2pdf().from(document.getElementById('history')).save('Heures.pdf'); }
+
+function handleImport(input) { 
+    const r = new FileReader(); 
+    r.onload = e => { 
+        data = JSON.parse(e.target.result); 
+        localStorage.setItem('work_tracker_data', JSON.stringify(data)); 
+        render(); 
+    }; 
+    r.readAsText(input.files[0]); 
+}
+
+function exportToPDF() { 
+    const mois = document.getElementById('current-view-label').innerText;
+    const element = document.getElementById('history');
+    const options = {
+        margin: 10,
+        filename: `Suivi-Heures-${mois}.pdf`,
+        image: { type: 'jpeg', quality: 0.98 },
+        html2canvas: { scale: 2 },
+        jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+    };
+    html2pdf().set(options).from(element).save(); 
+}
