@@ -139,4 +139,5 @@ function handleImport(input) { const reader = new FileReader(); reader.onload = 
 function exportToPDF() { 
     const mois = document.getElementById('current-view-label').innerText.replace(' ', '_');
     html2pdf().from(document.getElementById('history')).save(`Heures_${mois}.pdf`); 
+if ('serviceWorker' in navigator) { navigator.serviceWorker.register('./app.js'); }
 }
