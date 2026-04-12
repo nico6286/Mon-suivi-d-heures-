@@ -1,0 +1,18 @@
+{
+  "short_name": "Heures",
+  "name": "Mon suivi d'heures",
+  "icons": [
+    {
+      "src": "1000016253.jpg",
+      "type": "image/jpeg",
+      "sizes": "1024x1024",
+      "purpose": "any maskable"
+    }
+  ],
+  "start_url": "index.html",
+  "background_color": "#f2f4f7",
+  "display": "standalone",
+  "scope": "/",
+  "theme_color": "#4682a9",
+  "description": "Suivi des heures de travail et salaire net."
+}
