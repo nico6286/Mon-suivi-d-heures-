@@ -2,7 +2,8 @@ let data = JSON.parse(localStorage.getItem('work_tracker_data')) || [];
 const settings = { hourlyBrut: 12.2861, mealVal: 10.40, ratioNet: 0.77 }; 
 const joursFeries2026 = ["2026-01-01", "2026-04-06", "2026-05-01", "2026-05-08", "2026-05-14", "2026-05-25", "2026-07-14", "2026-08-15", "2026-11-01", "2026-11-11", "2026-12-25"];
 
-let viewDate = new Date(); // Date de référence pour la vue multi-mois
+// Initialisation sécurisée de la date de vue
+let viewDate = new Date();
 
 document.getElementById('date').valueAsDate = new Date();
 
@@ -20,12 +21,10 @@ function checkDayType() {
     document.getElementById('work-inputs').style.display = (type === 'work' && !isH) ? 'flex' : 'none';
     document.getElementById('chantier-div').style.display = (type === 'work' && !isH) ? 'block' : 'none';
     
-    // Alerte Vendredi
     const btn = document.getElementById('btn-save');
     if(dayNum === 5) btn.classList.add('friday-alert');
     else btn.classList.remove('friday-alert');
 
-    // Alerte Fin de mois
     document.getElementById('month-alert').style.display = (new Date().getDate() >= 25) ? 'block' : 'none';
 }
 
@@ -44,7 +43,7 @@ function saveSession() {
     } else {
         let sR = document.getElementById('start').value, eR = document.getElementById('end').value;
         p = parseInt(document.getElementById('break').value) || 0;
-        if (!date || !sR || !eR) return alert("Données incomplètes !");
+        if (!date || !sR || !eR) return alert("Veuillez saisir les horaires.");
         dur = (new Date(`${date}T${eR}`) - new Date(`${date}T${sR}`)) / 60000 - p;
         start = sR; end = eR;
     }
@@ -60,7 +59,11 @@ function saveSession() {
 }
 
 function render() {
-    const hist = document.getElementById('history'); hist.innerHTML = '';
+    const hist = document.getElementById('history'); 
+    if(!hist) return;
+    hist.innerHTML = '';
+
+    // Mise à jour du label du mois
     const label = viewDate.toLocaleDateString('fr-FR', { month: 'long', year: 'numeric' });
     document.getElementById('current-view-label').innerText = label;
 
@@ -68,7 +71,6 @@ function render() {
     const now = new Date();
     const curWeek = getWeekNumber(now);
 
-    // Filtrer pour le mois affiché
     const filtered = data.filter(s => {
         const d = new Date(s.date);
         return d.getMonth() === viewDate.getMonth() && d.getFullYear() === viewDate.getFullYear();
@@ -107,7 +109,7 @@ function render() {
                     </div>
                     <div class="text-end">
                         <span class="badge ${s.duration>=420?'bg-success':'bg-secondary'} rounded-pill">${fH(s.duration)}</span>
-                        <button onclick="deleteS(${s.id})" class="btn-link text-danger border-0 bg-transparent d-block ms-auto mt-2"><i class="bi bi-trash3"></i></button>
+                        <button onclick="deleteS(${s.id})" class="btn-link text-danger border-0 bg-transparent d-block ms-auto mt-2 p-1"><i class="bi bi-trash3"></i></button>
                     </div>
                 </div>
             </div>`;
@@ -181,28 +183,37 @@ function deleteS(id) { if(confirm("Supprimer ?")) { data = data.filter(x => x.id
 
 function showSalaryDetail() { new bootstrap.Modal(document.getElementById('salaryModal')).show(); }
 
-// EXPORT / IMPORT
-async function exportJSON() {
-    const dStr = JSON.stringify(data, null, 2);
-    const name = `heures_backup_${new Date().toISOString().slice(0,10)}.json`;
-    const blob = new Blob([dStr], { type: "application/json" });
+// EXPORT / IMPORT SÉCURISÉS
+function exportJSON() {
+    const dataStr = JSON.stringify(data, null, 2);
+    const name = `backup_heures_${new Date().toLocaleDateString('fr-FR').replace(/\//g,'-')}.json`;
+    const blob = new Blob([dataStr], { type: "application/json" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url; a.download = name; a.click();
+    window.URL.revokeObjectURL(url);
 }
 
 function importJSON() { document.getElementById('importFile').click(); }
+
 function handleImport(input) {
+    if (!input.files[0]) return;
     const reader = new FileReader();
-    reader.onload = function() {
-        data = JSON.parse(reader.result);
-        localStorage.setItem('work_tracker_data', JSON.stringify(data));
-        render();
+    reader.onload = function(e) {
+        try {
+            const imported = JSON.parse(e.target.result);
+            if(confirm("Écraser les données actuelles par cette sauvegarde ?")) {
+                data = imported;
+                localStorage.setItem('work_tracker_data', JSON.stringify(data));
+                render();
+            }
+        } catch(err) { alert("Fichier invalide"); }
     };
     reader.readAsText(input.files[0]);
 }
 
 function exportToPDF() { html2pdf().from(document.getElementById('printable-area')).save(`Heures_${viewDate.getMonth()+1}_${viewDate.getFullYear()}.pdf`); }
 
+// Lancement
 checkDayType();
 render();
