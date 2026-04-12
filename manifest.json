@@ -1,0 +1,15 @@
+{
+  "name": "Mon suivi d'heures",
+  "short_name": "SuiviHeures",
+  "start_url": ".",
+  "display": "standalone",
+  "background_color": "#f4f7f6",
+  "theme_color": "#2c3e50",
+  "icons": [
+    {
+      "src": "https://cdn-icons-png.flaticon.com/512/3239/3239243.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}
