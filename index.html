@@ -4,11 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Suivi Pro - Heures & Chantiers</title>
-    
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <link rel="apple-touch-icon" href="https://cdn-icons-png.flaticon.com/512/2693/2693514.png">
     <link rel="manifest" href="./manifest.json">
+    <link rel="apple-touch-icon" href="https://cdn-icons-png.flaticon.com/512/2693/2693514.png">
     <meta name="theme-color" content="#2c3e50">
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
@@ -19,43 +16,53 @@
         :root { --primary: #2c3e50; --success: #27ae60; --danger: #e74c3c; --warning: #f1c40f; }
         body { background-color: #f4f7f6; font-family: -apple-system, sans-serif; padding-bottom: 50px; }
         .card { border-radius: 15px; border: none; box-shadow: 0 4px 12px rgba(0,0,0,0.05); }
-        .stat-val { font-size: 1.4rem; font-weight: bold; color: var(--primary); display: block; }
-        .label-sm { font-size: 0.7rem; text-transform: uppercase; color: #7f8c8d; font-weight: bold; margin-bottom: 4px; display: block; }
+        .stat-val { font-size: 1.3rem; font-weight: bold; color: var(--primary); display: block; }
+        .label-sm { font-size: 0.65rem; text-transform: uppercase; color: #7f8c8d; font-weight: bold; margin-bottom: 4px; display: block; }
         
-        /* Tuiles & Salaire */
-        .salary-box { background: linear-gradient(135deg, #2c3e50, #4ca1af); color: white; border-radius: 20px; transition: transform 0.2s; }
+        /* Navigation Mois */
+        .month-nav { background: white; border-radius: 15px; padding: 12px; display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; border: 1px solid #eee; }
+        .month-label { font-weight: 800; text-transform: uppercase; color: var(--primary); font-size: 0.9rem; }
+        
+        /* Salaire & Design */
+        .salary-box { background: linear-gradient(135deg, #2c3e50, #4ca1af); color: white; border-radius: 20px; transition: 0.2s; cursor: pointer; }
         .salary-box:active { transform: scale(0.98); }
         .week-separator { background: #dfe6e9; padding: 10px 15px; margin: 20px -15px 10px -15px; font-size: 0.75rem; font-weight: 800; color: #2d3436; display: flex; justify-content: space-between; align-items: center; }
-        
-        /* Badges Delta */
-        .delta-tag { font-size: 0.7rem; padding: 2px 8px; border-radius: 10px; font-weight: bold; }
+        .delta-tag { font-size: 0.65rem; padding: 2px 7px; border-radius: 10px; font-weight: bold; }
         .delta-pos { background: #d4edda; color: #155724; }
         .delta-neg { background: #f8d7da; color: #721c24; }
         
-        /* États & Alertes */
+        /* Alertes */
         .bg-holiday { background-color: #fff9db !important; border-left: 5px solid #f1c40f !important; }
         .edit-mode { background-color: #fff3cd !important; border: 2px solid #ffc107 !important; }
-        #month-alert { display: none; background: #e67e22; color: white; padding: 10px; border-radius: 12px; margin-bottom: 15px; text-align: center; font-weight: bold; font-size: 0.85rem; }
-        
+        #month-alert { display: none; background: #e67e22; color: white; padding: 10px; border-radius: 12px; margin-bottom: 15px; text-align: center; font-weight: bold; font-size: 0.8rem; }
         @keyframes blink { 0% { opacity: 1; } 50% { opacity: 0.6; } 100% { opacity: 1; } }
-        .friday-alert { animation: blink 1.2s infinite; background-color: var(--danger) !important; color: white !important; border: none !important; }
-        
-        input.form-control, .form-select { border-radius: 10px; padding: 10px; border: 1px solid #dee2e6; }
+        .friday-alert { animation: blink 1.2s infinite; background-color: var(--danger) !important; color: white !important; }
     </style>
 </head>
 <body class="container py-3">
 
-    <div id="month-alert"><i class="bi bi-calendar-check-fill me-2"></i> Fin de mois : Pensez à exporter votre PDF !</div>
+    <div id="month-alert"><i class="bi bi-calendar-check-fill me-2"></i> Pensez à exporter votre PDF de fin de mois !</div>
 
-    <header class="d-flex justify-content-between align-items-center mb-4">
+    <header class="d-flex justify-content-between align-items-center mb-3">
         <h5 class="fw-bold m-0 text-primary"><i class="bi bi-clock-history me-2"></i>Suivi Pro</h5>
-        <button onclick="exportToPDF()" class="btn btn-sm btn-dark px-3 shadow-sm"><i class="bi bi-file-earmark-pdf"></i> PDF</button>
+        <div class="d-flex gap-2">
+            <button onclick="exportToPDF()" class="btn btn-sm btn-dark px-2 shadow-sm"><i class="bi bi-file-earmark-pdf"></i></button>
+            <button onclick="exportJSON()" class="btn btn-sm btn-outline-primary px-2 shadow-sm"><i class="bi bi-cloud-arrow-down"></i></button>
+            <button onclick="importJSON()" class="btn btn-sm btn-outline-secondary px-2 shadow-sm"><i class="bi bi-cloud-arrow-up"></i></button>
+        </div>
+        <input type="file" id="importFile" style="display:none" onchange="handleImport(this)">
     </header>
+
+    <div class="month-nav shadow-sm">
+        <button onclick="changeMonth(-1)" class="btn btn-light btn-sm"><i class="bi bi-chevron-left"></i></button>
+        <div class="month-label" id="current-view-label">Chargement...</div>
+        <button onclick="changeMonth(1)" class="btn btn-light btn-sm"><i class="bi bi-chevron-right"></i></button>
+    </div>
 
     <div class="row g-2 mb-3 text-center">
         <div class="col-6">
             <div class="card p-3 shadow-sm h-100">
-                <span class="label-sm">Heures Mois</span>
+                <span class="label-sm">Total Mois</span>
                 <span id="month-hours" class="stat-val">0h00</span>
                 <div id="month-delta-ui" class="mt-1"></div>
             </div>
@@ -69,10 +76,10 @@
         </div>
     </div>
 
-    <div class="card salary-box p-3 text-center mb-4 shadow" onclick="showSalaryDetail()" style="cursor:pointer">
-        <span class="label-sm text-white-50">Estimation Salaire Net</span>
+    <div class="card salary-box p-3 text-center mb-4 shadow" onclick="showSalaryDetail()">
+        <span class="label-sm text-white-50">Salaire Net Estimé</span>
         <h2 id="net-salary" class="fw-bold mb-0">0,00 €</h2>
-        <small class="text-white-50"><i class="bi bi-plus-circle me-1"></i> Cliquez pour voir le détail du calcul</small>
+        <small class="text-white-50 text-uppercase" style="font-size: 0.6rem;">Cliquer pour le détail</small>
     </div>
 
     <div class="card p-3 shadow-sm mb-4" id="form-card">
@@ -86,7 +93,7 @@
                     <option value="recup">⏳ Récup.</option>
                 </select>
             </div>
-            <div class="col-12 mt-2" id="chantier-div"><label class="label-sm">Nom du Chantier</label><input type="text" id="chantier" class="form-control" placeholder="Ex: Chantier Lorient"></div>
+            <div class="col-12 mt-2" id="chantier-div"><label class="label-sm">Nom du Chantier</label><input type="text" id="chantier" class="form-control" placeholder="Lieu ou client"></div>
             <div id="work-inputs" class="row g-2 m-0 p-0 w-100 mt-2">
                 <div class="col-4"><label class="label-sm">Début</label><input type="time" id="start" class="form-control"></div>
                 <div class="col-4"><label class="label-sm">Fin</label><input type="time" id="end" class="form-control"></div>
@@ -94,24 +101,22 @@
             </div>
             <div class="col-12 mt-3">
                 <input type="hidden" id="edit-id">
-                <button onclick="saveSession()" id="btn-save" class="btn btn-primary w-100 fw-bold py-3 shadow-sm">Enregistrer</button>
+                <button onclick="saveSession()" id="btn-save" class="btn btn-primary w-100 fw-bold py-3">Enregistrer</button>
             </div>
         </div>
     </div>
 
     <div id="printable-area"><div id="history"></div></div>
 
-    <button onclick="resetAll()" class="btn btn-link btn-sm w-100 text-danger mt-4 text-decoration-none">Réinitialiser les données</button>
-
     <div class="modal fade" id="salaryModal" tabindex="-1" aria-hidden="true">
       <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content border-0 shadow-lg" style="border-radius: 20px;">
-          <div class="modal-header border-0 pb-0"><h5 class="fw-bold">Détail de la paie</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
+        <div class="modal-content" style="border-radius: 20px;">
+          <div class="modal-header border-0 pb-0"><h6 class="fw-bold">Décompte estimatif</h6><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
           <div class="modal-body">
-            <div class="d-flex justify-content-between mb-2"><span>Heures (<span id="calc-hours">0h00</span>) :</span><span class="fw-bold" id="calc-brut-base">0,00 €</span></div>
-            <div class="d-flex justify-content-between mb-2 text-danger"><span>Cotisations (~23%) :</span><span class="fw-bold" id="calc-charges">- 0,00 €</span></div>
-            <div class="d-flex justify-content-between mb-3"><span>Paniers repas (<span id="calc-meals-count">0</span>) :</span><span class="fw-bold text-success" id="calc-meals-val">0,00 €</span></div>
-            <hr><div class="d-flex justify-content-between align-items-center"><span class="h5 fw-bold">TOTAL NET :</span><span class="h4 fw-bold text-primary" id="calc-net-total">0,00 €</span></div>
+            <div class="d-flex justify-content-between mb-2"><span>Brut (<span id="calc-hours">0h00</span>) :</span><span id="calc-brut-base">0,00 €</span></div>
+            <div class="d-flex justify-content-between mb-2 text-danger"><span>Charges (~23%) :</span><span id="calc-charges">- 0,00 €</span></div>
+            <div class="d-flex justify-content-between mb-3"><span>Paniers (<span id="calc-meals-count">0</span>) :</span><span class="text-success" id="calc-meals-val">+ 0,00 €</span></div>
+            <hr><div class="d-flex justify-content-between align-items-center"><span class="h6 fw-bold">NET À PAYER :</span><span class="h4 fw-bold text-primary" id="calc-net-total">0,00 €</span></div>
           </div>
         </div>
       </div>
