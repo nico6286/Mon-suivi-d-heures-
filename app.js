@@ -3,9 +3,15 @@ const settings = { hourlyBrut: 12.2861, mealVal: 10.40, ratioNet: 0.77 };
 const joursFeries2026 = ["2026-01-01", "2026-04-06", "2026-05-01", "2026-05-08", "2026-05-14", "2026-05-25", "2026-07-14", "2026-08-15", "2026-11-01", "2026-11-11", "2026-12-25"];
 
 let viewDate = new Date();
-document.getElementById('date').valueAsDate = new Date();
 
-// --- FONCTIONS DE NAVIGATION ET UI ---
+// On attend que le HTML soit chargé pour initialiser
+window.addEventListener('DOMContentLoaded', () => {
+    document.getElementById('date').valueAsDate = new Date();
+    render();
+    setupQuickTime('start');
+    setupQuickTime('end');
+    checkDayType();
+});
 
 function changeMonth(diff) {
     viewDate.setMonth(viewDate.getMonth() + diff);
@@ -18,19 +24,21 @@ function checkDayType() {
     const isH = joursFeries2026.includes(dVal);
     const dayNum = new Date(dVal).getDay();
     
-    document.getElementById('work-inputs').style.display = (type === 'work' && !isH) ? 'flex' : 'none';
-    document.getElementById('chantier-div').style.display = (type === 'work' && !isH) ? 'block' : 'none';
+    if(document.getElementById('work-inputs')) {
+        document.getElementById('work-inputs').style.display = (type === 'work' && !isH) ? 'flex' : 'none';
+        document.getElementById('chantier-div').style.display = (type === 'work' && !isH) ? 'block' : 'none';
+    }
     
     const btn = document.getElementById('btn-save');
-    if(dayNum === 5) btn.classList.add('friday-alert');
-    else btn.classList.remove('friday-alert');
+    if(btn) {
+        if(dayNum === 5) btn.classList.add('friday-alert');
+        else btn.classList.remove('friday-alert');
+    }
 
-    document.getElementById('month-alert').style.display = (new Date().getDate() >= 25) ? 'block' : 'none';
+    const alertBox = document.getElementById('month-alert');
+    if(alertBox) alertBox.style.display = (new Date().getDate() >= 25) ? 'block' : 'none';
 }
 
-// --- LOGIQUE DE SAISIE ---
-
-// La fonction de conversion (placée ici mais appelée à la fin)
 function setupQuickTime(id) {
     const el = document.getElementById(id);
     if (!el) return;
@@ -62,8 +70,7 @@ function saveSession() {
         let sR = document.getElementById('start').value, eR = document.getElementById('end').value;
         p = parseInt(document.getElementById('break').value) || 0;
         if (!date || !sR || !eR) return alert("Veuillez saisir les horaires.");
-        // Vérification du format avant calcul
-        if(!sR.includes(':') || !eR.includes(':')) return alert("Format heure invalide (ex: 08:00)");
+        if(!sR.includes(':') || !eR.includes(':')) return alert("Format heure invalide (ex: 800)");
         
         dur = (new Date(`${date}T${eR}`) - new Date(`${date}T${sR}`)) / 60000 - p;
         start = sR; end = eR;
@@ -79,15 +86,13 @@ function saveSession() {
     render();
 }
 
-// --- CALCULS ET AFFICHAGE ---
-
 function render() {
     const hist = document.getElementById('history'); 
-    if(!hist) return;
-    hist.innerHTML = '';
+    const label = document.getElementById('current-view-label');
+    if(!hist || !label) return;
 
-    const label = viewDate.toLocaleDateString('fr-FR', { month: 'long', year: 'numeric' });
-    document.getElementById('current-view-label').innerText = label;
+    hist.innerHTML = '';
+    label.innerText = viewDate.toLocaleDateString('fr-FR', { month: 'long', year: 'numeric' }).toUpperCase();
 
     let tM = 0, sM = 0, weekTotalNow = 0;
     const now = new Date();
@@ -156,4 +161,85 @@ function render() {
     document.getElementById('calc-charges').innerText = "- " + (brut * (1 - settings.ratioNet)).toFixed(2) + " €";
     document.getElementById('calc-meals-count').innerText = sM;
     document.getElementById('calc-meals-val').innerText = "+ " + (sM * settings.mealVal).toFixed(2) + " €";
-    document.getElementById('calc-net-total').innerText
+    document.getElementById('calc-net-total').innerText = net.toFixed(2).replace('.', ',') + " €";
+}
+
+function finalizeWeek(wNum, total) {
+    const d = total - 2100;
+    const ui = `<span class="delta-tag ${d>=0?'delta-pos':'delta-neg'} ms-2">${d>=0?'+':''}${fH(d)}</span>`;
+    const target = document.getElementById(`week-sum-${wNum}`);
+    if(target) target.innerHTML = fH(total) + ui;
+}
+
+function getWeekNumber(d) {
+    d = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()));
+    d.setUTCDate(d.getUTCDate() + 4 - (d.getUTCDay() || 7));
+    return Math.ceil((((d - new Date(Date.UTC(d.getUTCFullYear(), 0, 1))) / 86400000) + 1) / 7);
+}
+
+function fH(min) { 
+    const m = Math.abs(min); 
+    return `${min < 0 ? '-' : ''}${Math.floor(m/60)}h${Math.round(m%60).toString().padStart(2,'0')}`; 
+}
+
+function editS(id) {
+    const s = data.find(x => x.id === id);
+    document.getElementById('date').value = s.date;
+    document.getElementById('day-type').value = s.type === 'ferie' ? 'work' : s.type;
+    document.getElementById('chantier').value = s.chantier || "";
+    document.getElementById('start').value = s.start.includes(':') ? s.start : "";
+    document.getElementById('end').value = s.end.includes(':') ? s.end : "";
+    document.getElementById('break').value = s.pause || 45;
+    document.getElementById('edit-id').value = s.id;
+    document.getElementById('form-card').classList.add('edit-mode');
+    document.getElementById('btn-save').innerText = "Mettre à jour";
+    checkDayType();
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+function resetForm() {
+    document.getElementById('edit-id').value = "";
+    document.getElementById('chantier').value = "";
+    document.getElementById('form-card').classList.remove('edit-mode');
+    document.getElementById('btn-save').innerText = "Enregistrer";
+}
+
+function deleteS(id) { if(confirm("Supprimer ?")) { data = data.filter(x => x.id !== id); localStorage.setItem('work_tracker_data', JSON.stringify(data)); render(); } }
+
+function showSalaryDetail() { 
+    const modal = new bootstrap.Modal(document.getElementById('salaryModal'));
+    modal.show();
+}
+
+function exportJSON() {
+    const dataStr = JSON.stringify(data, null, 2);
+    const name = `backup_heures_${new Date().toLocaleDateString('fr-FR').replace(/\//g,'-')}.json`;
+    const blob = new Blob([dataStr], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url; a.download = name; a.click();
+    window.URL.revokeObjectURL(url);
+}
+
+function importJSON() { document.getElementById('importFile').click(); }
+
+function handleImport(input) {
+    if (!input.files[0]) return;
+    const reader = new FileReader();
+    reader.onload = function(e) {
+        try {
+            const imported = JSON.parse(e.target.result);
+            if(confirm("Importer les données de secours ?")) {
+                data = imported;
+                localStorage.setItem('work_tracker_data', JSON.stringify(data));
+                render();
+            }
+        } catch(err) { alert("Fichier invalide"); }
+    };
+    reader.readAsText(input.files[0]);
+}
+
+function exportToPDF() { 
+    const element = document.getElementById('printable-area');
+    html2pdf().from(element).save(`Heures_${viewDate.getMonth()+1}_${viewDate.getFullYear()}.pdf`); 
+}
