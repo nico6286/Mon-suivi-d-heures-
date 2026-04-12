@@ -15,41 +15,6 @@ window.onload = () => {
     render();
 };
 
-// Enregistrement du Service Worker
-if ('serviceWorker' in navigator) {
-  window.addEventListener('load', () => {
-    navigator.serviceWorker.register('/sw.js')
-      .then(registration => {
-        console.log('ServiceWorker registration successful');
-      })
-      .catch(err => {
-        console.log('ServiceWorker registration failed: ', err);
-      });
-  });
-}
-
-// Gestion de l'installation
-let deferredPrompt;
-
-window.addEventListener('beforeinstallprompt', (e) => {
-  e.preventDefault();
-  deferredPrompt = e;
-  document.getElementById('install-button').style.display = 'block';
-});
-
-document.getElementById('install-button').addEventListener('click', () => {
-  deferredPrompt.prompt();
-  deferredPrompt.userChoice.then((choiceResult) => {
-    if (choiceResult.outcome === 'accepted') {
-      console.log('User accepted the install prompt');
-    } else {
-      console.log('User dismissed the install prompt');
-    }
-    deferredPrompt = null;
-  });
-});
-
-
 function checkDayType() {
     const type = document.getElementById('day-type').value;
     const isW = (type === 'work' && !joursFeries2026.includes(document.getElementById('date').value));
@@ -58,7 +23,7 @@ function checkDayType() {
 }
 
 function showSalaryDetail() {
-    alert(`Détails du calcul :\n- Salaire : ${settings.hourlyBrut}€ Brut\n- Panier : ${settings.mealVal}€ / jour travaillé`);
+    alert(`Calcul :\n- Taux : ${settings.hourlyBrut}€ Brut\n- Panier : ${settings.mealVal}€ / jour travaillé`);
 }
 
 function saveSession() {
@@ -128,10 +93,7 @@ function render() {
             <div class="work-card" onclick="editS(${s.id})">
                 <div class="d-flex align-items-center">
                     <div class="me-3 fw-bold text-secondary" style="font-size:0.85rem">${d.getDate()}/${d.getMonth()+1}</div>
-                    <div>
-                        <div class="fw-bold text-uppercase" style="font-size:0.75rem; color:#475569">${icon} ${s.chantier || s.type}</div>
-                        <div class="info-detail">${detailTxt}</div>
-                    </div>
+                    <div><div class="fw-bold text-uppercase" style="font-size:0.75rem; color:#475569">${icon} ${s.chantier || s.type}</div><div class="info-detail">${detailTxt}</div></div>
                 </div>
                 <div class="d-flex align-items-center">
                     <div class="text-end me-3">
