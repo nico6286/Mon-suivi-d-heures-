@@ -84,7 +84,7 @@ function render() {
     label.innerText = viewDate.toLocaleDateString('fr-FR', { month: 'long', year: 'numeric' }).toUpperCase();
     hist.innerHTML = '';
 
-    let tM = 0, sM = 0;
+    let tM = 0, sM = 0, currentWeek = null;
     const filtered = data.filter(s => {
         const d = new Date(s.date);
         return d.getMonth() === viewDate.getMonth() && d.getFullYear() === viewDate.getFullYear();
@@ -94,8 +94,15 @@ function render() {
 
     filtered.forEach(s => {
         const d = new Date(s.date);
+        const wNum = getWeekNumber(d);
         tM += s.duration;
         if(s.type === 'work' || s.type === 'ferie') sM++;
+
+        // Séparateur de semaine
+        if (currentWeek !== wNum) {
+            currentWeek = wNum;
+            hist.innerHTML += `<div class="week-separator"><span>SEMAINE ${wNum}</span></div>`;
+        }
 
         const deltaDay = s.duration - 420;
         const dStyle = deltaDay >= 0 ? 'text-success' : 'text-danger';
@@ -122,7 +129,12 @@ function render() {
     document.getElementById('net-salary').innerText = net.toFixed(2).replace('.', ',') + " €";
 }
 
-// CETTE FONCTION ÉTAIT MANQUANTE :
+function getWeekNumber(d) {
+    d = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()));
+    d.setUTCDate(d.getUTCDate() + 4 - (d.getUTCDay() || 7));
+    return Math.ceil((((d - new Date(Date.UTC(d.getUTCFullYear(), 0, 1))) / 86400000) + 1) / 7);
+}
+
 function editS(id) {
     const s = data.find(x => x.id === id);
     document.getElementById('date').value = s.date;
@@ -133,6 +145,8 @@ function editS(id) {
     document.getElementById('break').value = s.pause || 45;
     document.getElementById('edit-id').value = s.id;
     document.getElementById('btn-save').innerText = "Mettre à jour";
+    // Remet la zone en jaune
+    document.getElementById('form-card').classList.add('edit-mode');
     checkDayType();
     window.scrollTo({ top: 0, behavior: 'smooth' });
 }
@@ -146,6 +160,7 @@ function resetForm() {
     document.getElementById('edit-id').value = "";
     document.getElementById('chantier').value = "";
     document.getElementById('btn-save').innerText = "Enregistrer";
+    document.getElementById('form-card').classList.remove('edit-mode');
 }
 
 function deleteS(id) { if(confirm("Supprimer ?")) { data = data.filter(x => x.id !== id); localStorage.setItem('work_tracker_data', JSON.stringify(data)); render(); } }
