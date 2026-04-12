@@ -21,7 +21,7 @@
         
         /* Navigation Mois */
         .month-nav { background: white; border-radius: 15px; padding: 12px; display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; border: 1px solid #eee; }
-        .month-label { font-weight: 800; text-transform: uppercase; color: var(--primary); font-size: 0.9rem; }
+        .month-label { font-weight: 800; text-transform: uppercase; color: var(--primary); font-size: 0.9rem; min-width: 120px; text-align: center; }
         
         /* Salaire & Design */
         .salary-box { background: linear-gradient(135deg, #2c3e50, #4ca1af); color: white; border-radius: 20px; transition: 0.2s; cursor: pointer; }
@@ -41,14 +41,14 @@
 </head>
 <body class="container py-3">
 
-    <div id="month-alert"><i class="bi bi-calendar-check-fill me-2"></i> Pensez à exporter votre PDF de fin de mois !</div>
+    <div id="month-alert"><i class="bi bi-calendar-check-fill me-2"></i> Fin de mois : Exportez votre PDF !</div>
 
     <header class="d-flex justify-content-between align-items-center mb-3">
         <h5 class="fw-bold m-0 text-primary"><i class="bi bi-clock-history me-2"></i>Suivi Pro</h5>
         <div class="d-flex gap-2">
-            <button onclick="exportToPDF()" class="btn btn-sm btn-dark px-2 shadow-sm"><i class="bi bi-file-earmark-pdf"></i></button>
-            <button onclick="exportJSON()" class="btn btn-sm btn-outline-primary px-2 shadow-sm"><i class="bi bi-cloud-arrow-down"></i></button>
-            <button onclick="importJSON()" class="btn btn-sm btn-outline-secondary px-2 shadow-sm"><i class="bi bi-cloud-arrow-up"></i></button>
+            <button onclick="exportJSON()" class="btn btn-sm btn-outline-primary shadow-sm" title="Sauvegarder"><i class="bi bi-cloud-arrow-down-fill"></i></button>
+            <button onclick="importJSON()" class="btn btn-sm btn-outline-secondary shadow-sm" title="Restaurer"><i class="bi bi-cloud-arrow-up-fill"></i></button>
+            <button onclick="exportToPDF()" class="btn btn-sm btn-dark shadow-sm" title="Exporter PDF"><i class="bi bi-file-earmark-pdf"></i></button>
         </div>
         <input type="file" id="importFile" style="display:none" onchange="handleImport(this)">
     </header>
@@ -77,9 +77,8 @@
     </div>
 
     <div class="card salary-box p-3 text-center mb-4 shadow" onclick="showSalaryDetail()">
-        <span class="label-sm text-white-50">Salaire Net Estimé</span>
+        <span class="label-sm text-white-50">Salaire Net Estimé (Cliquez)</span>
         <h2 id="net-salary" class="fw-bold mb-0">0,00 €</h2>
-        <small class="text-white-50 text-uppercase" style="font-size: 0.6rem;">Cliquer pour le détail</small>
     </div>
 
     <div class="card p-3 shadow-sm mb-4" id="form-card">
@@ -108,15 +107,17 @@
 
     <div id="printable-area"><div id="history"></div></div>
 
+    <button onclick="if(confirm('Tout effacer ?')) {localStorage.clear(); location.reload();}" class="btn btn-link btn-sm w-100 text-danger mt-4 text-decoration-none opacity-50">Réinitialiser l'application</button>
+
     <div class="modal fade" id="salaryModal" tabindex="-1" aria-hidden="true">
       <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content" style="border-radius: 20px;">
           <div class="modal-header border-0 pb-0"><h6 class="fw-bold">Décompte estimatif</h6><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
           <div class="modal-body">
-            <div class="d-flex justify-content-between mb-2"><span>Brut (<span id="calc-hours">0h00</span>) :</span><span id="calc-brut-base">0,00 €</span></div>
+            <div class="d-flex justify-content-between mb-2"><span>Heures (<span id="calc-hours">0h00</span>) :</span><span id="calc-brut-base">0,00 €</span></div>
             <div class="d-flex justify-content-between mb-2 text-danger"><span>Charges (~23%) :</span><span id="calc-charges">- 0,00 €</span></div>
             <div class="d-flex justify-content-between mb-3"><span>Paniers (<span id="calc-meals-count">0</span>) :</span><span class="text-success" id="calc-meals-val">+ 0,00 €</span></div>
-            <hr><div class="d-flex justify-content-between align-items-center"><span class="h6 fw-bold">NET À PAYER :</span><span class="h4 fw-bold text-primary" id="calc-net-total">0,00 €</span></div>
+            <hr><div class="d-flex justify-content-between align-items-center"><span class="h6 fw-bold">TOTAL NET :</span><span class="h4 fw-bold text-primary" id="calc-net-total">0,00 €</span></div>
           </div>
         </div>
       </div>
