@@ -3,21 +3,18 @@
   "name": "Mon suivi d'heures",
   "icons": [
     {
-      "src": "./1000016253.jpg",
+      "src": "1000016253.jpg",
       "sizes": "192x192",
-      "type": "image/jpeg",
-      "purpose": "any"
+      "type": "image/jpeg"
     },
     {
-      "src": "./1000016253.jpg",
+      "src": "1000016253.jpg",
       "sizes": "512x512",
-      "type": "image/jpeg",
-      "purpose": "maskable"
+      "type": "image/jpeg"
     }
   ],
-  "start_url": "./index.html",
+  "start_url": "index.html",
   "background_color": "#f2f4f7",
   "display": "standalone",
-  "orientation": "portrait",
   "theme_color": "#4682a9"
 }
